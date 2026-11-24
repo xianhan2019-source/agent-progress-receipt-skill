@@ -1,0 +1,21 @@
+{
+  "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
+  "api_key": "YOUR_API_KEY",
+  "models": [
+    "gemini-3.8-flash",
+    "gpt-4o-mini"
+  ],
+  "adapter": "markdown",
+  "source_glob": "./logs/*.md",
+  "output_dir": "./output",
+  "closing_style": "encouraging",
+  "sensitive_keywords": [
+    "password",
+    "private_key",
+    "secret_key",
+    "银行卡",
+    "身份证",
+    "密码",
+    "病历"
+  ]
+}
