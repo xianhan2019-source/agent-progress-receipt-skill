@@ -48,10 +48,12 @@ def _wrap_cjk(text: str, max_units: int = 30) -> list[str]:
     return lines or [""]
 
 
-def _progress_bar(pct: int, width: int = 6) -> str:
+def _progress_bar(pct: int, width: int = 6, thermal: bool = False) -> str:
     pct = max(0, min(100, int(pct)))
     filled = round(pct / 100 * width)
-    return "[" + ("█" * filled) + ("░" * (width - filled)) + f"] {pct}%"
+    fill_ch = "■" if thermal else "█"
+    empty_ch = "□" if thermal else "░"
+    return "[" + (fill_ch * filled) + (empty_ch * (width - filled)) + f"] {pct}%"
 
 
 def _update_streak(output_root: str, target_d: date) -> tuple[int, int]:
@@ -201,13 +203,13 @@ def build_paperless_receipt_text(date_str: str, total_days: int, streak_days: in
         lines.append(f"  {tr['name']} {_progress_bar(tr['pct'], 5)}")
     lines.extend(["--------------------------------", "[ COMPLETED ]"])
     for item in data["done"]:
-        for idx, sub in enumerate(_wrap_cjk(item, 26)):
+        for idx, sub in enumerate(_wrap_cjk(item, 34)):
             lines.append(("  [x] " if idx == 0 else "      ") + sub)
     lines.append("[ NEXT ANCHOR ]")
-    for idx, sub in enumerate(_wrap_cjk(data["next_step"], 26)):
+    for idx, sub in enumerate(_wrap_cjk(data["next_step"], 34)):
         lines.append(("  [ ] " if idx == 0 else "      ") + sub)
     lines.append("--------------------------------")
-    for sub in _wrap_cjk(data["closing"], 28):
+    for sub in _wrap_cjk(data["closing"], 36):
         lines.append("  " + sub)
     lines.append("================================")
     return "\n".join(lines)
@@ -324,13 +326,29 @@ def main() -> int:
         try:
             from note_artisan import build_note, export_to_svg, render_social_preview
 
+            stars = "★" * data["focus_score"] + "☆" * (5 - data["focus_score"])
+            sep = "─" * 34
+            t_lines = [f"THEME: {data['theme']}  {stars}", sep, "[ TRACKS ]"]
+            for tr in data["tracks"]:
+                t_lines.append(f"  {tr['name']} {_progress_bar(tr['pct'], 5, thermal=True)}")
+            t_lines.extend([sep, "[ COMPLETED ]"])
+            for item in data["done"]:
+                for idx, sub in enumerate(_wrap_cjk(item, 42)):
+                    t_lines.append(("  [x] " if idx == 0 else "      ") + sub)
+            t_lines.append("[ NEXT ANCHOR ]")
+            for idx, sub in enumerate(_wrap_cjk(data["next_step"], 42)):
+                t_lines.append(("  [ ] " if idx == 0 else "      ") + sub)
+            t_lines.append(sep)
+            closing_clean = data["closing"].replace("♡~", "~").replace("♡", "")
+            t_lines.extend(_wrap_cjk(closing_clean, 44))
+
             img_1bit = build_note(
                 "journal",
                 "57x80",
                 custom_data={
-                    "weather": f"✦ {target_d.isoformat()} · DAY#{total_days}",
-                    "mood": data["mood"],
-                    "content": "\n".join(_wrap_cjk(receipt_txt, 28)[:18]),
+                    "weather": f"* {target_d.isoformat()} | DAY #{total_days:03d}",
+                    "mood": f"FOCUS {data['focus_score']}/5 | STREAK {streak_days}d",
+                    "content": "\n".join(t_lines[:18]),
                 },
             )
             img_1bit.save(os.path.join(day_dir, f"journal_{target_d.isoformat()}_1bit.png"))
