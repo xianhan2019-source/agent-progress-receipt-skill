@@ -32,6 +32,7 @@ python scripts/generate_receipt.py --config config.json --today --md-only
 | Antigravity | `--adapter antigravity` | `~/.gemini/antigravity/brain/*/.system_generated/logs/transcript.jsonl` |
 | Claude Code | `--adapter claude_code` | `~/.claude/projects/*/*.jsonl` |
 | Markdown / OpenClaw | `--adapter markdown` | `./logs/*.md` (or `--source` glob) |
+| Generic JSON Feed | `--adapter json_feed` | `./feeds/*.json` (social/status items JSON) |
 
 ## Pairing with AstrBot
 

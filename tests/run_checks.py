@@ -13,7 +13,8 @@ sys.stdout.reconfigure(encoding="utf-8")
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
-from adapters import harvest_markdown
+import json
+from adapters import harvest_json_feed, harvest_markdown
 from generate_receipt import build_paperless_receipt_text, write_markdown_receipt
 from sanitizer import is_sensitive_turn, sanitize_text
 
@@ -52,4 +53,20 @@ with tempfile.TemporaryDirectory() as tmp:
     out_md = os.path.join(tmp, "journal_2026-11-24.md")
     write_markdown_receipt(out_md, "2026-11-24", 1, 1, sample_data, receipt_txt)
     assert os.path.isfile(out_md) and os.path.getsize(out_md) > 100
-print("[PASS] Markdown adapter & paperless receipt checks passed")
+
+    feed_path = os.path.join(tmp, "feed.json")
+    with open(feed_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "items": [
+                    {"author_id": "u1", "created_at": "2026-11-24T12:00:00+08:00", "summary": "Attended group meeting"},
+                    {"author_id": "u2", "created_at": "2026-11-24T13:00:00+08:00", "summary": "Other user post"},
+                ]
+            },
+            f,
+        )
+    flines = harvest_json_feed(
+        date(2026, 11, 24), timezone(timedelta(hours=8)), source_glob=feed_path, author_id="u1"
+    )
+    assert len(flines) == 1 and "Attended group meeting" in flines[0]
+print("[PASS] Markdown, json_feed adapter & paperless receipt checks passed")

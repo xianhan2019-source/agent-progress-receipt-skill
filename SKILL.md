@@ -16,7 +16,7 @@ Turn daily AI-assisted work and study into tangible, visualizable progress:
   2. Deterministic regex redaction (`nvapi-`, `sk-`, `AIza`, `ghp_`, Bearer tokens, phones, emails, ID cards, user home paths, auth URLs).
   3. Abstract-only LLM summarization (strictly forbids PII/secrets/verbatim quotes).
   4. Optional IM sync isolation (private-chat whitelist only when paired with `astrbot_plugin_agent_brief_sync`).
-- **Pluggable Adapters**: `antigravity`, `claude_code`, `markdown` (compatible with OpenClaw `MEMORY.md` / daily logs / Cursor exports).
+- **Pluggable Adapters**: `antigravity`, `claude_code`, `markdown` (compatible with OpenClaw `MEMORY.md` / daily logs / Cursor exports), and `json_feed` (generic social/status JSON feed items).
 - **Optional Thermal Render**: Pass `--thermal-scripts-dir` to also emit 384px 1-bit PNG, realistic paper card PNG, and SVG; omits gracefully with `--md-only` or when `PIL` is absent.
 
 ## Quick Usage

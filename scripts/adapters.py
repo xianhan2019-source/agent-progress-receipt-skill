@@ -157,8 +157,55 @@ def harvest_markdown(
     return lines_out[-60:]
 
 
+def harvest_json_feed(
+    target_date: date,
+    tz: timezone,
+    source_glob: str | None = None,
+    sensitive_keywords: Iterable[str] = DEFAULT_SENSITIVE_KEYWORDS,
+    author_id: str | None = None,
+) -> list[str]:
+    """Generic social/status JSON feed adapter (expects items with created_at/timestamp and summary/text)."""
+    pattern = os.path.expanduser(source_glob or "./feeds/*.json")
+    start, end = _time_window(target_date, tz)
+    entries: list[tuple[datetime, str]] = []
+
+    for path in glob.glob(pattern):
+        try:
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
+                payload = json.load(f)
+            items = payload.get("items", payload) if isinstance(payload, dict) else payload
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                if author_id:
+                    item_author = str(item.get("hostuin") or item.get("author_id") or "")
+                    if item_author != str(author_id):
+                        continue
+                ts = item.get("created_at") or item.get("timestamp")
+                if isinstance(ts, (int, float)):
+                    dt = datetime.fromtimestamp(float(ts), tz=tz)
+                elif isinstance(ts, str):
+                    dt = _parse_iso_local(ts, tz)
+                else:
+                    continue
+                if dt is None or not (start <= dt < end):
+                    continue
+                text = str(item.get("summary") or item.get("text") or item.get("content") or "")
+                raw = re.sub(r"\s+", " ", text).strip()[:240]
+                if raw and not is_sensitive_turn(raw, sensitive_keywords):
+                    entries.append((dt, f"[{dt:%H:%M}] Feed: {sanitize_text(raw)}"))
+        except (OSError, json.JSONDecodeError, ValueError, TypeError):
+            continue
+
+    entries.sort(key=lambda x: x[0])
+    return [t for _, t in entries[-30:]]
+
+
 ADAPTERS = {
     "antigravity": harvest_antigravity,
     "claude_code": harvest_claude_code,
     "markdown": harvest_markdown,
+    "json_feed": harvest_json_feed,
 }
